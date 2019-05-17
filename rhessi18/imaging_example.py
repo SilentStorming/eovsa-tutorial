@@ -28,7 +28,7 @@ pbcor = True # correct for primary beam response?
 outdir = './images' # Specify where you want to save the output fits files
 if not os.path.exists(outdir):
     os.makedirs(outdir)
-outimgpre = 'EO' # Something to add to the series of image name
+outimgpre = 'EO' # Something to add to the image name
 #################################################################################
 
 ################### CHANGE ONLY IF YOU KNOW WHAT YOU ARE DOING ##################
@@ -81,7 +81,7 @@ imname0 = outdir + '/'+ outimgpre
 fitsfiles=[]
 for s,sp in enumerate(spws):
     cfreq=cfreqs[int(sp)]
-    imname = imname0 + midtstr + '_s' + sp.zfill(2) # add band information to image name
+    imname = imname0 + midtstr + '_S' + sp.zfill(2) # add band information to image name
     fitsfile = imname + '.fits'
     if not os.path.exists(fitsfile):
         print 'cleaning spw {0:s} with beam size {1:.1f}"'.format(sp,bmsz[s])
