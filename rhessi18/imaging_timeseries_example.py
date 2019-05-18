@@ -6,7 +6,7 @@ from astropy.time import Time
 from matplotlib import pyplot as plt
 from taskinit import qa, tb
 from ptclean3_cli import ptclean3_cli as ptclean
-from suncasa.utils import mstools
+from suncasa.utils import helioimage2fits as hf
 import multiprocessing
 import astropy.units as u
 from suncasa.utils import plot_mapX as pmX
@@ -67,7 +67,7 @@ outimgpre = 'EO'  # Something to add to the image name
 
 ################### CONVERT XYCEN TO PHASE CENTER IN RA AND DEC ##################
 try:
-    phasecenter, midt = mstools.calc_phasecenter_from_solxy(vis, timerange=trange, xycen=xycen)
+    phasecenter, midt = hf.calc_phasecenter_from_solxy(vis, timerange=trange, xycen=xycen)
     print('use phasecenter: ' + phasecenter)
 except:
     print('Provided time format not recognized by astropy.time.Time')
