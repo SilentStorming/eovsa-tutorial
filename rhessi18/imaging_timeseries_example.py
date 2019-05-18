@@ -39,25 +39,26 @@ History:
         Created a new example script based on S. Yu's practice for imaging 
         the 2017 Aug 21 20:20 UT flare data. Made it available for EOVSA tutorial at 
         RHESSI XVIII Workshop (http://rhessi18.umn.edu/)
+        
 '''
 
 ################### USER INPUT GOES IN THIS BLOK ########################
 vis = 'IDB20170821201800-202300.4s.slfcaled.ms'  # input visibility data
 specfile = vis + '.dspec.npz'  ## input dynamic spectrum
-nthreads = max(multiprocessing.cpu_count() - 2, 1)  # Number of processing threads to use
+nthreads = 1  # Number of processing threads to use
 overwrite = True  # whether to overwrite the existed fits files.
 trange = ''  # select the time range for imaging, leave it blank for using the entire time interval in the data
-twidth = 2  # make one image out of every 2 time integrations
+twidth = 1  # make one image out of every 2 time integrations
 xycen = [380., 50.]  # define the center of the output map, in solar X and Y. Unit: arcsec
 xran = [280., 480.]  # plot range in solar X. Unit: arcsec
 yran = [-50., 150.]  # plot range in solar Y. Unit: arcsec
-antennas = '!13;!14;!15'  # use all 13 EOVSA antennas. If some antenna is no good, drop it in this selection
+antennas = '0~12'  # use all 13 EOVSA antennas. If some antenna is no good, drop it in this selection
 npix = 128  # number of pixels in the image
 cell = '2arcsec'  # pixel scale in arcsec
 pol = 'XX'  # polarization to image, use XX for now
 pbcor = True  # correct for primary beam response?
 grid_spacing = 5. * u.deg  # spacing for plotting longitude and latitude grid in degrees
-outdir = './images_series/'  # Specify where you want to save the output fits files
+outdir = './image_series/'  # Specify where you want to save the output fits files
 imresfile = 'imres.npz'  # File to write the imageing results summary
 if not os.path.exists(outdir):
     os.makedirs(outdir)
@@ -110,8 +111,8 @@ for s, sp in enumerate(spws):
                   spw=sp,
                   timerange=trange,
                   specmode="mfs",
-                  niter=500,
-                  gain=0.05,
+                  niter=200,
+                  gain=0.1,
                   deconvolver="hogbom",
                   interactive=False,
                   mask='',
