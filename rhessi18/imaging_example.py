@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from astropy.time import Time
 from taskinit import qa, tb
 from suncasa.utils import mstools
+from astropy.io import fits
 
 '''
 Example script for doing a 30-band spectral imaging at a given time
@@ -119,7 +120,9 @@ fig = plt.figure(figsize=(8.4, 7.))
 for s, sp in enumerate(spws):
     cfreq = cfreqs[int(sp)]
     ax = fig.add_subplot(gs[s])
-    eomap = smap.Map(fitsfiles[s])
+    hdu = fits.open(fitsfiles[s])
+    data = hdu[0].data.reshape([npix,npix])
+    eomap = smap.Map(data, hdu[0].header)
     eomap.plot_settings['cmap'] = plt.get_cmap('jet')
     eomap.plot(axes=ax)
     eomap.draw_limb()

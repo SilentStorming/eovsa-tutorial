@@ -196,8 +196,6 @@ for tidx in tqdm(range(len(imres[0]['ImageName']))):
         if os.path.exists(fsfile):
             hdu = fits.open(fsfile)
             data = hdu[0].data.reshape(imsize)
-            # eomap = smap.Map(hdu[0].data,hdu[0].header)
-            # data = eomap.data.reshape(imsize)
             data[np.isnan(data)] = 0.0
             eomap = smap.Map(data, hdu[0].header)
             hdu.close()
