@@ -67,7 +67,7 @@ outimgpre = 'EO'  # Something to add to the image name
 
 ################### CONVERT XYCEN TO PHASE CENTER IN RA AND DEC ##################
 try:
-    phasecenter, midt = mstools.getphasecenter(vis, timerange=trange, xycen=xycen)
+    phasecenter, midt = mstools.calc_phasecenter_from_solxy(vis, timerange=trange, xycen=xycen)
     print('use phasecenter: ' + phasecenter)
 except:
     print('Provided time format not recognized by astropy.time.Time')
