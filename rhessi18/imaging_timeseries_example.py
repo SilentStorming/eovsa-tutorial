@@ -47,7 +47,7 @@ specfile = vis + '.dspec.npz'  ## input dynamic spectrum
 nthreads = max(multiprocessing.cpu_count() - 2, 1)  # Number of processing threads to use
 overwrite = True  # whether to overwrite the existed fits files.
 trange = ''  # select the time range for imaging, leave it blank for using the entire time interval in the data
-twidth = 2  # Number of time pixels to average
+twidth = 2  # make one image out of every 2 time integrations
 xycen = [380., 50.]  # define the center of the output map, in solar X and Y. Unit: arcsec
 xran = [280., 480.]  # plot range in solar X. Unit: arcsec
 yran = [-50., 150.]  # plot range in solar Y. Unit: arcsec
@@ -229,7 +229,7 @@ for tidx in tqdm(range(len(imres[0]['ImageName']))):
     tim_axvspan.set_xy(tim_axvspan_xy)
     # tim_axvspan.set_xy(tim_axvspan_xy)
     figname = fsfile[:-9] + '.png'
-    fig.savefig(figname)
+    fig.savefig(figname,dpi=150)
 
 plt.ion()
 
