@@ -17,6 +17,15 @@ from suncasa.utils import DButil
 from scipy.signal import medfilt
 from astropy.io import fits
 
+################### This prevent the script running on Virgo ########################
+import socket
+
+hostname = (socket.gethostname())
+if hostname == 'ip-172-26-5-203.ec2.internal':
+    raise SystemError('Caution: This script is very computational intensive.\
+    Please do not try to run this script on the AWS server Virgo,\
+    as it has limited resources that everyone share during the tutorial.')
+#################################################################################
 
 def sfu2tb(freq, flux, beamsize):
     import scipy.constants as sc
@@ -202,7 +211,7 @@ for tidx in tqdm(range(len(imres[0]['ImageName']))):
             hdu.close()
             if tidx == 0:
                 eomap_ = pmX.Sunmap(eomap)
-                im.append(eomap_.imshow(axes=ax, vmax=dmaxs[s], vmin=dmaxs[s]*0.05))
+                im.append(eomap_.imshow(axes=ax, vmax=dmaxs[s], vmin=dmaxs[s] * 0.05))
                 eomap_.draw_limb(axes=ax)
                 eomap_.draw_grid(axes=ax, grid_spacing=grid_spacing)
                 ax.set_title(' ')
@@ -230,7 +239,7 @@ for tidx in tqdm(range(len(imres[0]['ImageName']))):
     tim_axvspan.set_xy(tim_axvspan_xy)
     # tim_axvspan.set_xy(tim_axvspan_xy)
     figname = fsfile[:-9] + '.png'
-    fig.savefig(figname,dpi=150)
+    fig.savefig(figname, dpi=150)
 
 plt.ion()
 
