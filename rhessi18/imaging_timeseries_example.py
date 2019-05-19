@@ -67,7 +67,7 @@ bmsz = [max(sbeam * cfreqs[1] / f, 6.) for f in cfreqs]
 
 ############# This block checks if the script is being run on Virgo ############
 import socket
-if hostname == 'ip-172-26-5-203.ec2.internal':
+if socket.gethostname() == 'ip-172-26-5-203.ec2.internal':
     print('!!!!!!Caution!!!!!!: This script is very computationally intensive.\
                 Please do not try to run this script when Virgo is busy (e.g., during the tutorial)')
     msg0 = 'Do you wish to proceed?'
