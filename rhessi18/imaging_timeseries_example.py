@@ -152,15 +152,23 @@ for s, sp in enumerate(spws):
     clnres.append(res)
 
 for s, sp in enumerate(spws):
-    clnres[s]['Freq'] = [cfreqs[s] / 1.e9] * len(clnres[s]['ImageName'])
-np.savez(outdir + imresfile, imres=clnres)
+    clnres[s]['FreqGHz'] = [cfreqs[int(sp)] / 1.e9] * len(clnres[s]['ImageName'])
+
+########### Combine ALL FITS IMAGES INTO MULTI-FREQUENCY IMAGE CUBES ###########
+ntime = len(imres[0]['ImageName'])
+import suncasa.utils.fits_wrap as fw
+for i in range(ntime):
+    fits = [imres[s]['ImageName'][i] for s in range(len(imres))]
+    imname = imres[0]['ImageName'][i] 
+    fw.fits_wrap_spwX(fits, outfitsfile = imname.replace(imname[-8:-5],'ALLBD'))
+
+#### SIJIE, WE MAY NEED TO CHANGE the clnres record before saving to a file ####
 # imageing results summary are saved to "imresfile"
+np.savez(outdir + imresfile, imres=clnres)
 #################################################################################
 
-
 ########### PLOT ALL THE FITS IMAGES USING SUNPY.MAP ###########
-imres = np.load(outdir + imresfile, encoding="latin1")
-imres = imres['imres']
+imres = np.load(outdir + imresfile, encoding="latin1")['imres']
 imsize = [npix] * 2
 spws = [str(s + 1) for s in range(30)]
 
@@ -259,3 +267,6 @@ for tidx in tqdm(range(len(imres[0]['ImageName']))):
 plt.ion()
 
 DButil.img2html_movie('{}/EO'.format(outdir))
+
+
+
