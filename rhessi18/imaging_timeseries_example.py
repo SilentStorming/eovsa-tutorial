@@ -18,6 +18,53 @@ from scipy.signal import medfilt
 from astropy.io import fits
 import psutil
 
+'''
+Example script for doing a time series of 30-band spectral imaging in a given time interval
+
+History:
+    2019-May-17 SY
+        Created a new example script based on S. Yu's practice for imaging 
+        the 2017 Aug 21 20:20 UT flare data. Made it available for EOVSA tutorial at 
+        RHESSI XVIII Workshop (http://rhessi18.umn.edu/)
+    2019-May-19 SY, BC
+        Made changes to check if the script is being run on Virgo
+        Cleaned up the script
+'''
+
+################### USER INPUT GOES IN THIS BLOK ########################
+vis = 'IDB20170821201800-202300.4s.slfcaled.ms'  # input visibility data
+specfile = vis + '.dspec.npz'  ## input dynamic spectrum
+nthreads = 1  # Number of processing threads to use
+overwrite = True  # whether to overwrite the existed fits files.
+trange = ''  # select the time range for imaging, leave it blank for using the entire time interval in the data
+twidth = 1  # make one image out of every 2 time integrations
+xycen = [380., 50.]  # define the center of the output map, in solar X and Y. Unit: arcsec
+xran = [280., 480.]  # plot range in solar X. Unit: arcsec
+yran = [-50., 150.]  # plot range in solar Y. Unit: arcsec
+antennas = ''  # default is to use all 13 EOVSA 2-m antennas. 
+npix = 128  # number of pixels in the image
+cell = '2arcsec'  # pixel scale in arcsec
+pol = 'XX'  # polarization to image, use XX for now
+pbcor = True  # correct for primary beam response?
+grid_spacing = 5. * u.deg  # spacing for plotting longitude and latitude grid in degrees
+outdir = './image_series/'  # Specify where you want to save the output fits files
+imresfile = 'imres.npz'  # File to write the imageing results summary
+outimgpre = 'EO'  # Something to add to the image name
+#################################################################################
+
+################### (OPTIONAL) DEFINE RESTORING BEAM SIZE  ##################
+### (Optional) the following is to define beam size ###
+# read frequency information from visibility data
+tb.open(vis + '/SPECTRAL_WINDOW')
+reffreqs = tb.getcol('REF_FREQUENCY')
+bdwds = tb.getcol('TOTAL_BANDWIDTH')
+cfreqs = reffreqs + bdwds / 2.
+tb.close()
+spws = [str(s + 1) for s in range(30)]
+sbeam = 30.
+bmsz = [max(sbeam * cfreqs[1] / f, 6.) for f in cfreqs]
+#################################################################################
+
 ############# This block checks if the script is being run on Virgo ############
 import socket
 if hostname == 'ip-172-26-5-203.ec2.internal':
@@ -57,69 +104,19 @@ def sfu2tb(freq, flux, beamsize):
     return np.array(flux) * sfu2cgs * vc ** 2e0 / (2e0 * kb * np.array(freq) ** 2e0 * sr)
 
 
-'''
-Example script for doing a time series of 30-band spectral imaging in a given time interval
-
-History:
-    2019-May-17 SY
-        Created a new example script based on S. Yu's practice for imaging 
-        the 2017 Aug 21 20:20 UT flare data. Made it available for EOVSA tutorial at 
-        RHESSI XVIII Workshop (http://rhessi18.umn.edu/)
-    2019-May-19 SY, BC
-        Made changes to check if the script is being run on Virgo
-'''
-
-################### USER INPUT GOES IN THIS BLOK ########################
-vis = 'IDB20170821201800-202300.4s.slfcaled.ms'  # input visibility data
-specfile = vis + '.dspec.npz'  ## input dynamic spectrum
-nthreads = 1  # Number of processing threads to use
-overwrite = True  # whether to overwrite the existed fits files.
-trange = ''  # select the time range for imaging, leave it blank for using the entire time interval in the data
-twidth = 1  # make one image out of every 2 time integrations
-xycen = [380., 50.]  # define the center of the output map, in solar X and Y. Unit: arcsec
-xran = [280., 480.]  # plot range in solar X. Unit: arcsec
-yran = [-50., 150.]  # plot range in solar Y. Unit: arcsec
-antennas = ''  # default is to use all 13 EOVSA 2-m antennas. 
-npix = 128  # number of pixels in the image
-cell = '2arcsec'  # pixel scale in arcsec
-pol = 'XX'  # polarization to image, use XX for now
-pbcor = True  # correct for primary beam response?
-grid_spacing = 5. * u.deg  # spacing for plotting longitude and latitude grid in degrees
-outdir = './image_series/'  # Specify where you want to save the output fits files
-imresfile = 'imres.npz'  # File to write the imageing results summary
+################### MAIN BLOCK FOR CLEAN  ##################
 if not os.path.exists(outdir):
     os.makedirs(outdir)
-outimgpre = 'EO'  # Something to add to the image name
-#################################################################################
-
-
-################### CONVERT XYCEN TO PHASE CENTER IN RA AND DEC ##################
+midtstr = ((midt.isot).replace(':', '')).replace('-', '')
+imname0 = outdir + '/' + outimgpre
+# Covert in put solar XY (xycen) to new phasecenter in RA and DEC 
 try:
     phasecenter, midt = hf.calc_phasecenter_from_solxy(vis, timerange=trange, xycen=xycen)
     print('use phasecenter: ' + phasecenter)
 except:
     print('Provided time format not recognized by astropy.time.Time')
     print('Please use format trange="yyyy/mm/dd/hh:mm:ss~yyyy/mm/dd/hh:mm:ss"')
-#################################################################################
-
-
-################### (OPTIONAL) DEFINE RESTORING BEAM SIZE  ##################
-### (Optional) the following is to define beam size ###
-# read frequency information from visibility data
-tb.open(vis + '/SPECTRAL_WINDOW')
-reffreqs = tb.getcol('REF_FREQUENCY')
-bdwds = tb.getcol('TOTAL_BANDWIDTH')
-cfreqs = reffreqs + bdwds / 2.
-tb.close()
-spws = [str(s + 1) for s in range(30)]
-sbeam = 30.
-bmsz = [max(sbeam * cfreqs[1] / f, 6.) for f in cfreqs]
-#################################################################################
-
-
-################### MAIN BLOCK FOR CLEAN  ##################
-midtstr = ((midt.isot).replace(':', '')).replace('-', '')
-imname0 = outdir + '/' + outimgpre
+# Start to clean
 fitsfiles = []
 clnres = []
 for s, sp in enumerate(spws):
