@@ -1,4 +1,4 @@
-import os
+import os,sys
 import numpy as np
 from matplotlib import gridspec as gridspec
 from sunpy import map as smap
@@ -16,15 +16,32 @@ from tqdm import tqdm
 from suncasa.utils import DButil
 from scipy.signal import medfilt
 from astropy.io import fits
+import psutil
 
-################### This prevent the script running on Virgo ########################
+############# This block checks if the script is being run on Virgo ############
 import socket
-
-hostname = (socket.gethostname())
 if hostname == 'ip-172-26-5-203.ec2.internal':
-    raise SystemError('Caution: This script is very computational intensive.\
-    Please do not try to run this script on the AWS server Virgo,\
-    as it has limited resources that everyone share during the tutorial.')
+    print('!!!!!!Caution!!!!!!: This script is very computationally intensive.\
+                Please do not try to run this script when Virgo is busy (e.g., during the tutorial)')
+    msg0 = 'Do you wish to proceed?'
+    if sys.version_info[0] < 3:
+        shall0 = raw_input("%s (y/N) " % msg0).lower() == 'y'
+    else:
+        shall0 = input("%s (y/N) " % msg0).lower() == 'y'
+    if shall0:
+        print('Current CPU Load: {:.0f}%'.format(psutil.cpu_percent()))
+        print('Current Memory Usage: {:.0f}%'.format(psutil.virtual_memory()[2]))
+        msg1 = 'Do you still wish to proceed?'
+        if sys.version_info[0] < 3:
+            shall1 = raw_input("%s (y/N) " % msg1).lower() == 'y'
+        else:
+            shall1 = input("%s (y/N) " % msg1).lower() == 'y'
+        if shall1:
+            print('You win. Continue running on Virgo...')
+        else:
+            sys.exit("Abandon Ship...")
+    else:
+        sys.exit("Abandon Ship...")
 #################################################################################
 
 def sfu2tb(freq, flux, beamsize):
@@ -48,7 +65,8 @@ History:
         Created a new example script based on S. Yu's practice for imaging 
         the 2017 Aug 21 20:20 UT flare data. Made it available for EOVSA tutorial at 
         RHESSI XVIII Workshop (http://rhessi18.umn.edu/)
-        
+    2019-May-19 SY, BC
+        Made changes to check if the script is being run on Virgo
 '''
 
 ################### USER INPUT GOES IN THIS BLOK ########################
