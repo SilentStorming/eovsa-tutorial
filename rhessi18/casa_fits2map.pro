@@ -94,7 +94,8 @@ case 1 of
             return
         endelse
 
-        add_prop, map, id = index.telescop  + ' ' + stokes + ' ' + strtrim(string(freq,format='(f6.3)'),2) + frequnit
+        add_prop, map, id = index.telescop  + ' ' + stokes + ' ' + $
+            strtrim(string(freq,format='(f6.3)'),2) + ' ' + frequnit
         add_prop, map, freq = freq
         add_prop, map, frequnit = 'GHz' 
         add_prop, map, stokes = stokes
@@ -162,7 +163,8 @@ case 1 of
                        dx     = ind.cdelt1, $
                        dy     = ind.cdelt2, $
                        time   = anytim(time,/vms), $
-                       id     = ind.telescop + ' ' + stokes + ' ' + strtrim(string(freq,format='(f6.3)'),2) + frequnit,$ 
+                       id     = ind.telescop + ' ' + stokes + ' '+ $
+                                strtrim(string(freq,format='(f6.3)'),2) + ' ' + frequnit , $
                        dur    = ind.exptime, $
                        freq  = freq , $
                        frequnit = 'GHz', $
@@ -246,7 +248,8 @@ case 1 of
                            dx     = ind.cdelt1, $
                            dy     = ind.cdelt2, $
                            time   = anytim(time,/vms), $
-                           id     = ind.telescop + ' ' + stokes + ' '+ strtrim(string(freq,format='(f6.3)'),2) + frequnit , $
+                           id     = ind.telescop + ' ' + stokes + ' '+ $
+                                    strtrim(string(freq,format='(f6.3)'),2) + ' ' + frequnit , $
                            dur    = ind.exptime, $
                            freq  = freq , $
                            frequnit = frequnit, $
@@ -334,7 +337,8 @@ case 1 of
                                dx     = ind.cdelt1, $
                                dy     = ind.cdelt2, $
                                time   = anytim(time,/vms), $
-                               id     = ind.telescop + ' ' + stokes + ' '+ strtrim(string(freq,format='(f6.3)'),2) + frequnit , $
+                               id     = ind.telescop + ' ' + stokes + ' '+ $
+                                        strtrim(string(freq,format='(f6.3)'),2) + ' ' + frequnit , $
                                dur    = ind.exptime, $
                                freq  = freq , $
                                frequnit = 'GHz', $
