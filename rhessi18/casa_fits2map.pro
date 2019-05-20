@@ -42,13 +42,16 @@ function calc_rms, map, rmsxran=rmsxran, rmsyran=rmsyran, snr=snr
     if keyword_set(rmsxran) or keyword_set(rmsyran) then begin
         if not keyword_set(rmsxran) then rmsxran=get_map_xrange(map[0])
         if not keyword_set(rmsyran) then rmsyran=get_map_yrange(map[0])
+        rmsxran=float(rmsxran) & rmsyran=float(rmsyran)
         sub_map, map, smap, xrange=rmsxran, yrange=rmsyran
     endif else begin
         ; use entire map
+        rmsxran=get_map_xrange(map[0])
+        rmsyran=get_map_yrange(map[0])
         smap = map
     endelse
-    ;select only pixels smaller than 20% of the maximum
-    idx = where(smap.data lt 0.2*max(map.data,/nan))
+    ;select only pixels smaller than 10% of the maximum
+    idx = where(smap.data lt 0.1*max(map.data,/nan))
     rms = sqrt((moment(smap.data[idx],/nan))[1])
     snr = max(map.data,/nan)/rms
     return, rms
@@ -96,7 +99,7 @@ case 1 of
         add_prop, map, frequnit = 'GHz' 
         add_prop, map, stokes = stokes
         add_prop, map, dataunit = index.bunit 
-        add_prop, map, btype = index.btype 
+        add_prop, map, datatype = index.btype 
         add_prop, map, bmaj = index.bmaj
         add_prop, map, bmin = index.bmin
         add_prop, map, bpa = index.bpa
@@ -168,7 +171,7 @@ case 1 of
                        roll_angle = 0., $
                        stokes = stokes)
                 add_prop, map, dataunit = ind.bunit 
-                add_prop, map, btype = ind.btype 
+                add_prop, map, datatype = ind.btype 
                 add_prop, map, bmaj = ind.bmaj
                 add_prop, map, bmin = ind.bmin
                 add_prop, map, bpa = ind.bpa
@@ -252,7 +255,7 @@ case 1 of
                            roll_angle = 0., $
                            stokes = stokes)
                 add_prop, map, dataunit = ind.bunit 
-                add_prop, map, btype = ind.btype 
+                add_prop, map, datatype = ind.btype 
                 add_prop, map, bmaj = ind.bmaj
                 add_prop, map, bmin = ind.bmin
                 add_prop, map, bpa = ind.bpa
@@ -340,7 +343,7 @@ case 1 of
                                roll_angle = 0., $
                                stokes = stokes)
                     add_prop, map, dataunit = ind.bunit 
-                    add_prop, map, btype = ind.btype 
+                    add_prop, map, datatype = ind.btype 
                     add_prop, map, bmaj = ind.bmaj
                     add_prop, map, bmin = ind.bmin
                     add_prop, map, bpa = ind.bpa
