@@ -1,4 +1,4 @@
-import os,sys
+import os, sys
 import numpy as np
 from matplotlib import gridspec as gridspec
 from sunpy import map as smap
@@ -37,16 +37,16 @@ specfile = vis + '.dspec.npz'  ## input dynamic spectrum
 nthreads = 1  # Number of processing threads to use
 overwrite = True  # whether to overwrite the existed fits files.
 trange = ''  # select the time range for imaging, leave it blank for using the entire time interval in the data
-twidth = 1  # make one image out of every 2 time integrations
+twidth = 1  # make one image out of every 1 time integrations
 xycen = [380., 50.]  # define the center of the output map, in solar X and Y. Unit: arcsec
-xran = [280., 480.]  # plot range in solar X. Unit: arcsec
-yran = [-50., 150.]  # plot range in solar Y. Unit: arcsec
+xran = [340., 420.]  # plot range in solar X. Unit: arcsec
+yran = [10., 90.]  # plot range in solar Y. Unit: arcsec
 antennas = ''  # default is to use all 13 EOVSA 2-m antennas. 
 npix = 128  # number of pixels in the image
 cell = '2arcsec'  # pixel scale in arcsec
 pol = 'XX'  # polarization to image, use XX for now
 pbcor = True  # correct for primary beam response?
-grid_spacing = 5. * u.deg  # spacing for plotting longitude and latitude grid in degrees
+grid_spacing = 2. * u.deg  # spacing for plotting longitude and latitude grid in degrees
 outdir = './image_series/'  # Specify where you want to save the output fits files
 imresfile = 'imres.npz'  # File to write the imageing results summary
 outimgpre = 'EO'  # Something to add to the image name
@@ -67,6 +67,7 @@ bmsz = [max(sbeam * cfreqs[1] / f, 6.) for f in cfreqs]
 
 ############# This block checks if the script is being run on Virgo ############
 import socket
+
 if socket.gethostname() == 'ip-172-26-5-203.ec2.internal':
     print('!!!!!!Caution!!!!!!: We detected that you are trying to run this computationally intensive script on Virgo.')
     print('Please do not try to run this script when Virgo is busy (e.g., during the tutorial)')
@@ -89,6 +90,8 @@ if socket.gethostname() == 'ip-172-26-5-203.ec2.internal':
             sys.exit("Abandon Ship...")
     else:
         sys.exit("Abandon Ship...")
+
+
 #################################################################################
 
 def sfu2tb(freq, flux, beamsize):
@@ -107,11 +110,10 @@ def sfu2tb(freq, flux, beamsize):
 ################### MAIN BLOCK FOR CLEAN  ##################
 if not os.path.exists(outdir):
     os.makedirs(outdir)
-midtstr = ((midt.isot).replace(':', '')).replace('-', '')
 imname0 = outdir + '/' + outimgpre
 # Covert in put solar XY (xycen) to new phasecenter in RA and DEC 
 try:
-    phasecenter, midt = hf.calc_phasecenter_from_solxy(vis, timerange=trange, xycen=xycen)
+    phasecenter, tmid = hf.calc_phasecenter_from_solxy(vis, timerange=trange, xycen=xycen)
     print('use phasecenter: ' + phasecenter)
 except:
     print('Provided time format not recognized by astropy.time.Time')
@@ -155,20 +157,33 @@ for s, sp in enumerate(spws):
     clnres[s]['FreqGHz'] = [cfreqs[int(sp)] / 1.e9] * len(clnres[s]['ImageName'])
 
 ########### Combine ALL FITS IMAGES INTO MULTI-FREQUENCY IMAGE CUBES ###########
-ntime = len(imres[0]['ImageName'])
+ntime = len(clnres[0]['ImageName'])
 import suncasa.utils.fits_wrap as fw
-for i in range(ntime):
-    fits = [imres[s]['ImageName'][i] for s in range(len(imres))]
-    imname = imres[0]['ImageName'][i] 
-    fw.fits_wrap_spwX(fits, outfitsfile = imname.replace(imname[-8:-5],'ALLBD'))
 
-#### SIJIE, WE MAY NEED TO CHANGE the clnres record before saving to a file ####
+imres = {}
+for k in ['EndTime', 'BeginTime']:
+    imres[k] = clnres[0][k]
+
+imres['FreqGHz'] = [clnres[s]['FreqGHz'][0] for s in range(len(clnres))]
+imres['ImageName'] = []
+imres['Succeeded'] = np.vstack([clnres[s]['Succeeded'] for s in range(len(clnres))])
+
+for i in range(ntime):
+    fitsfile = [clnres[s]['ImageName'][i] for s in range(len(clnres))]
+    imname = clnres[0]['ImageName'][i]
+    imname_ = imname.replace(imname[-8:-5], 'ALLBD')
+    imres['ImageName'].append(imname_)
+    fw.fits_wrap_spwX(fitsfile, outfitsfile=imname_)
+    for s in fitsfile:
+        os.system('rm -rf {}'.format(s))
+
 # imageing results summary are saved to "imresfile"
-np.savez(outdir + imresfile, imres=clnres)
+np.savez(outdir + imresfile, imres=imres)
 #################################################################################
 
+
 ########### PLOT ALL THE FITS IMAGES USING SUNPY.MAP ###########
-imres = np.load(outdir + imresfile, encoding="latin1")['imres']
+imres = np.load(outdir + imresfile, encoding="latin1")['imres'].item()
 imsize = [npix] * 2
 spws = [str(s + 1) for s in range(30)]
 
@@ -185,7 +200,13 @@ ax_dspec = fig.add_subplot(gs2[0])
 
 ## plot the dynamic spectrum
 ax = ax_dspec
-specdata = np.load(specfile)
+if os.path.exists(specfile):
+    specdata = np.load(specfile)
+else:
+    from suncasa.utils import dspec as ds
+
+    uvrange = '0.1~1.0km'
+    ds.get_dspec(vis, specfile=specfile, uvrange=uvrange, domedian=True)
 spec = specdata['spec']
 (npol, nbl, nfreq, ntim) = spec.shape
 spec = spec[0, 0, :, :]
@@ -211,44 +232,66 @@ ax.xaxis.set_major_formatter(date_format)
 locator = mdates.AutoDateLocator()
 ax.xaxis.set_major_locator(locator)
 tidx = 0
-tim_axvspan = ax.axvspan(Time(imres[0]['BeginTime'][tidx]).plot_date, Time(imres[0]['EndTime'][tidx]).plot_date,
+tim_axvspan = ax.axvspan(Time(imres['BeginTime'][tidx]).plot_date, Time(imres['EndTime'][tidx]).plot_date,
                          facecolor='w', alpha=0.6)
 ax.set_xlabel('Start Time ({})'.format(spec_tim[tidx].datetime.strftime('%b-%d-%Y %H:%M:%S')))
 ## get the spectrum at the peak time
 tidxmax = np.nanargmax(np.nanmean(spec_plt, axis=0))
-spec_v = medfilt(spec_plt[:, tidxmax], len(spec[:, 0]) / 100 * 2 + 1)
-## get the dmaxs for images plot
-spec_v_ = np.interp(cfreqs / 1e9, freqghz, spec_v) / 1e4  ## flux density in sfu
-dmaxs = sfu2tb(cfreqs, spec_v_, bmsz)
+peak_frm = np.nanargmin(np.abs(Time(imres['BeginTime']).plot_date - spec_tim[tidxmax].plot_date))
+fsfile = imres['ImageName'][peak_frm]
+if os.path.exists(fsfile):
+    ## get the dmaxs for images plot from the image at peak time
+    hdu = fits.open(fsfile)
+    dmaxs = [np.nanmax(hdu[0].data[0, s, :, :]) for s in range(len(spws))]
+    hdu.close()
+else:
+    ## get the dmaxs for images plot from the dynamic spectrum
+    spec_v = medfilt(spec_plt[:, tidxmax], len(spec[:, 0]) / 100 * 2 + 1)
+    spec_v_ = np.interp(cfreqs, freqghz, spec_v) / 1e4  ## flux density in sfu
+    dmaxs = sfu2tb(cfreqs * 1e9, spec_v_, bmsz)
 
-for tidx in tqdm(range(len(imres[0]['ImageName']))):
+plt_ax = True
+for tidx in tqdm(range(len(imres['ImageName']))):
+    fsfile = imres['ImageName'][tidx]
+    if os.path.exists(fsfile):
+        hdu = fits.open(fsfile)
+    else:
+        data = np.zeros(imsize)
     for s, sp in enumerate(spws):
-        cfreq = imres[s]['Freq'][0]
+        cfreq = imres['FreqGHz'][s]
         ax = axs[s]
-        fsfile = imres[s]['ImageName'][tidx]
         if os.path.exists(fsfile):
-            hdu = fits.open(fsfile)
-            data = hdu[0].data.reshape(imsize)
+            data = hdu[0].data[0, s, :, :].reshape(imsize)
             data[np.isnan(data)] = 0.0
             eomap = smap.Map(data, hdu[0].header)
-            hdu.close()
-            if tidx == 0:
+            if tidx == 0 or plt_ax:
                 eomap_ = pmX.Sunmap(eomap)
                 im.append(eomap_.imshow(axes=ax, vmax=dmaxs[s], vmin=dmaxs[s] * 0.05))
                 eomap_.draw_limb(axes=ax)
                 eomap_.draw_grid(axes=ax, grid_spacing=grid_spacing)
-                ax.set_title(' ')
-                ax.get_xaxis().set_visible(False)
-                ax.get_yaxis().set_visible(False)
-                ax.set_xlim(xran)
-                ax.set_ylim(yran)
             else:
-                im[s].set_array(eomap.data)
+                im[s].set_array(data)
             if tidx == 0:
                 ax.text(0.95, 0.95, '{0:.1f} GHz'.format(cfreq), transform=ax.transAxes, ha='right', va='top',
                         color='w', fontweight='bold')
         else:
-            im[s].set_array(eomap.data * 0)
+            if plt_ax:
+                pass
+            else:
+                im[s].set_array(data)
+
+    if plt_ax:
+        for s, sp in enumerate(spws):
+            ax = axs[s]
+            ax.set_title(' ')
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+            ax.set_xlim(xran)
+            ax.set_ylim(yran)
+    if os.path.exists(fsfile):
+        hdu.close()
+        plt_ax = False
+
     if tidx == 0:
         ax = axs[0]
         timetext = ax.text(0.95, 0.02, eomap.date.strftime('%H:%M:%S'), ha='right', va='bottom',
@@ -257,16 +300,13 @@ for tidx in tqdm(range(len(imres[0]['ImageName']))):
         timetext.set_text(eomap.date.strftime('%H:%M:%S'))
 
     tim_axvspan_xy = tim_axvspan.get_xy()
-    tim_axvspan_xy[np.array([0, 1, 4]), 0] = Time(imres[0]['BeginTime'][tidx]).plot_date
-    tim_axvspan_xy[np.array([2, 3]), 0] = Time(imres[0]['EndTime'][tidx]).plot_date
+    tim_axvspan_xy[np.array([0, 1, 4]), 0] = Time(imres['BeginTime'][tidx]).plot_date
+    tim_axvspan_xy[np.array([2, 3]), 0] = Time(imres['EndTime'][tidx]).plot_date
     tim_axvspan.set_xy(tim_axvspan_xy)
     # tim_axvspan.set_xy(tim_axvspan_xy)
     figname = fsfile[:-9] + '.png'
-    fig.savefig(figname, dpi=150)
+    fig.savefig(figname, dpi=100)
 
 plt.ion()
 
 DButil.img2html_movie('{}/EO'.format(outdir))
-
-
-
