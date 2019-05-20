@@ -106,7 +106,7 @@ case 1 of
         add_prop, map, rsun = index.rsun_obs
         add_prop, map, l0 = index.HGLN_OBS
         add_prop, map, b0 = index.HGLT_OBS
-        add_prop, map, comment = 'Converted by VLA_FITS2MAP.PRO'
+        add_prop, map, comment = 'Converted by CASA_FITS2MAP.PRO'
         map.roll_angle=0.
         if keyword_set(calcrms) then begin
             rms = calc_rms(map, rmsxran=rmsxran, rmsyran=rmsyran, snr=snr)
@@ -178,7 +178,7 @@ case 1 of
                 add_prop, map, rsun = ind.rsun_obs
                 add_prop, map, l0 = ind.HGLN_OBS
                 add_prop, map, b0 = ind.HGLT_OBS
-                add_prop, map, comment = 'Converted by VLA_FITS2MAP.PRO'
+                add_prop, map, comment = 'Converted by CASA_FITS2MAP.PRO'
                 if keyword_set(calcrms) then begin
                     rms = calc_rms(map, rmsxran=rmsxran, rmsyran=rmsyran, snr=snr)
                     add_prop, map, rms = rms
@@ -262,7 +262,7 @@ case 1 of
                 add_prop, map, rsun = ind.rsun_obs
                 add_prop, map, l0 = ind.HGLN_OBS
                 add_prop, map, b0 = ind.HGLT_OBS
-                add_prop, map, comment = 'Converted by VLA_FITS2MAP.PRO'
+                add_prop, map, comment = 'Converted by CASA_FITS2MAP.PRO'
                 if keyword_set(calcrms) then begin
                     rms = calc_rms(map, rmsxran=rmsxran, rmsyran=rmsyran, snr=snr)
                     add_prop, map, rms = rms
@@ -350,7 +350,7 @@ case 1 of
                     add_prop, map, rsun = ind.rsun_obs
                     add_prop, map, l0 = ind.HGLN_OBS
                     add_prop, map, b0 = ind.HGLT_OBS
-                    add_prop, map, comment = 'Converted by VLA_FITS2MAP.PRO'
+                    add_prop, map, comment = 'Converted by CASA_FITS2MAP.PRO'
                     if keyword_set(calcrms) then begin
                         rms = calc_rms(map, rmsxran=rmsxran, rmsyran=rmsyran, snr=snr)
                         add_prop, map, rms = rms
