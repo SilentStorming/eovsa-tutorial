@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from astropy.time import Time
 from taskinit import qa, tb
 from astropy.io import fits
+import suncasa.utils.fits_wrap as fw
 
 '''
 Example script for doing a 30-band spectral imaging at a given time
@@ -22,8 +23,8 @@ Example script for doing a 30-band spectral imaging at a given time
 vis = 'IDB20170821201800-202300.4s.slfcaled.ms'  # input visibility data
 trange = '2017/08/21/20:21:00~2017/08/21/20:21:30'  # select the time range for imaging (averaging)
 xycen = [380., 50.]  # define the center of the output map, in solar X and Y. Unit: arcsec
-xran = [280., 480.]  # plot range in solar X. Unit: arcsec
-yran = [-50., 150.]  # plot range in solar Y. Unit: arcsec
+xran = [340., 420.]  # plot range in solar X. Unit: arcsec
+yran = [10., 90.]  # plot range in solar Y. Unit: arcsec
 antennas = ''  # default is to use all 13 EOVSA 2-m antennas
 npix = 256  # number of pixels in the image
 cell = '1arcsec'  # pixel scale in arcsec
@@ -112,6 +113,11 @@ for s, sp in enumerate(spws):
 # all the output fits files are given in "fitsfiles"
 #################################################################################
 
+######## Combine separate-frequency-band FITS files into a single one ######
+outfitsfile=fitsfiles[0].replace(fitsfiles[0][-8:-5], 'ALLBD')
+fw.fits_wrap_spwX(fitsfiles, outfitsfile=outfitsfile)
+for s in fitsfiles:
+    os.system('rm -f {}'.format(s))
 
 ########### PLOT ALL THE FITS IMAGES USING SUNPY.MAP ###########
 gs = gridspec.GridSpec(5, 6)
@@ -119,8 +125,8 @@ fig = plt.figure(figsize=(8.4, 7.))
 for s, sp in enumerate(spws):
     cfreq = cfreqs[int(sp)]
     ax = fig.add_subplot(gs[s])
-    hdu = fits.open(fitsfiles[s])
-    data = hdu[0].data.reshape([npix,npix])
+    hdu = fits.open(outfitsfile)
+    data = hdu[0].data[0, s].reshape([npix,npix])
     eomap = smap.Map(data, hdu[0].header)
     eomap.plot_settings['cmap'] = plt.get_cmap('jet')
     eomap.plot(axes=ax)
@@ -130,7 +136,7 @@ for s, sp in enumerate(spws):
     ax.get_yaxis().set_visible(False)
     ax.set_xlim(xran)
     ax.set_ylim(yran)
-    plt.text(0.97, 0.85, '{0:.1f} GHz'.format(cfreq / 1e9), transform=ax.transAxes, ha='right', color='w',
+    plt.text(0.96, 0.85, '{0:.1f} GHz'.format(cfreq / 1e9), transform=ax.transAxes, ha='right', color='w',
              fontweight='bold')
 plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
 plt.show()
