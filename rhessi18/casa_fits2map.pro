@@ -34,6 +34,7 @@
 ;               19-May-2019, Bin Chen - added additional keywords to the map structure, and renamed to casa_fits2map.pro
 ;                               * calcrms: whether or not to calculate rms, which uses rmsxran and rmsyran
 ;                               * and a function to calculate rms
+;               14-Sep-2019, Bin Chen - modified calc_rms to fix issue if selected region has no pixel with flux < 0.1*max 
 ;
 ; Contact     : bin.chen@njit.edu
 ;-
@@ -51,8 +52,15 @@ function calc_rms, map, rmsxran=rmsxran, rmsyran=rmsyran, snr=snr
         smap = map
     endelse
     ;select only pixels smaller than 10% of the maximum
-    idx = where(smap.data lt 0.1*max(map.data,/nan))
-    rms = sqrt((moment(smap.data[idx],/nan))[1])
+    idx = where(smap.data lt 0.1*max(map.data,/nan), npix)
+    if npix ge 5 then begin
+        rms = sqrt((moment(smap.data[idx],/nan))[1])
+    endif else begin
+        print, 'Warning: Selected rms region has less than 5 pixels with <10% max flux'
+        print, 'Check your image quality or region selection'
+        print, 'Now I am using all the pixels for rms...' 
+        rms = sqrt((moment(smap.data,/nan))[1])
+    endelse
     snr = max(map.data,/nan)/rms
     return, rms
 end
@@ -104,9 +112,9 @@ case 1 of
         add_prop, map, bmaj = index.bmaj
         add_prop, map, bmin = index.bmin
         add_prop, map, bpa = index.bpa
-        add_prop, map, rsun = index.rsun_obs
-        add_prop, map, l0 = index.HGLN_OBS
-        add_prop, map, b0 = index.HGLT_OBS
+        if tag_exist(index,'rsun_obs') then add_prop, map, rsun = index.rsun_obs
+        if tag_exist(index,'hgln_obs') then add_prop, map, l0 = index.hgln_OBS
+        if tag_exist(index,'hglt_obs') then add_prop, map, b0 = index.hglt_OBS
         add_prop, map, comment = 'Converted by CASA_FITS2MAP.PRO'
         map.roll_angle=0.
         if keyword_set(calcrms) then begin
@@ -177,9 +185,9 @@ case 1 of
                 add_prop, map, bmaj = ind.bmaj
                 add_prop, map, bmin = ind.bmin
                 add_prop, map, bpa = ind.bpa
-                add_prop, map, rsun = ind.rsun_obs
-                add_prop, map, l0 = ind.HGLN_OBS
-                add_prop, map, b0 = ind.HGLT_OBS
+                if tag_exist(index,'rsun_obs') then add_prop, map, rsun = index.rsun_obs
+                if tag_exist(index,'hgln_obs') then add_prop, map, l0 = index.hgln_OBS
+                if tag_exist(index,'hglt_obs') then add_prop, map, b0 = index.hglt_OBS
                 add_prop, map, comment = 'Converted by CASA_FITS2MAP.PRO'
                 if keyword_set(calcrms) then begin
                     rms = calc_rms(map, rmsxran=rmsxran, rmsyran=rmsyran, snr=snr)
@@ -262,9 +270,9 @@ case 1 of
                 add_prop, map, bmaj = ind.bmaj
                 add_prop, map, bmin = ind.bmin
                 add_prop, map, bpa = ind.bpa
-                add_prop, map, rsun = ind.rsun_obs
-                add_prop, map, l0 = ind.HGLN_OBS
-                add_prop, map, b0 = ind.HGLT_OBS
+                if tag_exist(index,'rsun_obs') then add_prop, map, rsun = index.rsun_obs
+                if tag_exist(index,'hgln_obs') then add_prop, map, l0 = index.hgln_OBS
+                if tag_exist(index,'hglt_obs') then add_prop, map, b0 = index.hglt_OBS
                 add_prop, map, comment = 'Converted by CASA_FITS2MAP.PRO'
                 if keyword_set(calcrms) then begin
                     rms = calc_rms(map, rmsxran=rmsxran, rmsyran=rmsyran, snr=snr)
@@ -351,9 +359,9 @@ case 1 of
                     add_prop, map, bmaj = ind.bmaj
                     add_prop, map, bmin = ind.bmin
                     add_prop, map, bpa = ind.bpa
-                    add_prop, map, rsun = ind.rsun_obs
-                    add_prop, map, l0 = ind.HGLN_OBS
-                    add_prop, map, b0 = ind.HGLT_OBS
+                    if tag_exist(index,'rsun_obs') then add_prop, map, rsun = index.rsun_obs
+                    if tag_exist(index,'hgln_obs') then add_prop, map, l0 = index.hgln_OBS
+                    if tag_exist(index,'hglt_obs') then add_prop, map, b0 = index.hglt_OBS
                     add_prop, map, comment = 'Converted by CASA_FITS2MAP.PRO'
                     if keyword_set(calcrms) then begin
                         rms = calc_rms(map, rmsxran=rmsxran, rmsyran=rmsyran, snr=snr)
